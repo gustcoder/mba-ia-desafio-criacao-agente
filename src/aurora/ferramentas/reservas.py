@@ -36,7 +36,10 @@ async def verificar_disponibilidade(area: str, data: str) -> dict[str, Any]:
 
 async def listar_minhas_reservas(tool_context: ToolContext) -> dict[str, Any]:
     """Lista as reservas ativas do apartamento do morador desta conversa."""
-    reservas = await repo.listar_reservas(apartamento_da_sessao(tool_context))
+    try:
+        reservas = await repo.listar_reservas(apartamento_da_sessao(tool_context))
+    except ErroDeDominio as e:
+        return erro(e)
     return {"reservas": [asdict(r) for r in reservas]}
 
 
@@ -105,7 +108,12 @@ async def cancelar_reserva_por_codigo(codigo: str, tool_context: ToolContext) ->
     Args:
         codigo: código da reserva (ex.: RSV-1234).
     """
-    reserva = await repo.cancelar_reserva_por_codigo(apartamento_da_sessao(tool_context), codigo)
+    try:
+        reserva = await repo.cancelar_reserva_por_codigo(
+            apartamento_da_sessao(tool_context), codigo
+        )
+    except ErroDeDominio as e:
+        return erro(e)
     if reserva is None:
         return {
             "status": "nao_encontrada",
