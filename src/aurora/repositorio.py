@@ -67,6 +67,13 @@ def validar_data(data: str) -> str:
         raise DataInvalida(data) from None
 
 
+def validar_nome(nome: str) -> str:
+    nome = " ".join((nome or "").split())
+    if not nome:
+        raise NomeInvalido()
+    return nome
+
+
 # --- Áreas e apartamentos -------------------------------------------------
 
 
@@ -89,6 +96,25 @@ async def apartamento_existe(numero: str) -> bool:
     async with conectar() as conn:
         cursor = await conn.execute("SELECT 1 FROM apartamentos WHERE numero = ?", (numero,))
         return await cursor.fetchone() is not None
+
+
+# --- Sessões --------------------------------------------------------------
+
+
+async def registrar_sessao(session_id: str, apartamento: str) -> None:
+    async with transacao() as conn:
+        await conn.execute(
+            "INSERT INTO sessoes (session_id, apartamento) VALUES (?, ?)", (session_id, apartamento)
+        )
+
+
+async def apartamento_da_sessao(session_id: str) -> str | None:
+    async with conectar() as conn:
+        cursor = await conn.execute(
+            "SELECT apartamento FROM sessoes WHERE session_id = ?", (session_id,)
+        )
+        linha = await cursor.fetchone()
+    return linha["apartamento"] if linha else None
 
 
 # --- Reservas --------------------------------------------------------------
@@ -183,9 +209,7 @@ async def listar_visitantes(apartamento: str) -> list[Visitante]:
 
 async def autorizar_visitante(apartamento: str, nome: str, data: str) -> Visitante:
     """Registra a autorização. Repetir a mesma (nome, data) não duplica."""
-    nome = " ".join(nome.split())
-    if not nome:
-        raise NomeInvalido()
+    nome = validar_nome(nome)
     data = validar_data(data)
     async with transacao() as conn:
         await conn.execute(

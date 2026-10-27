@@ -58,6 +58,13 @@ CREATE TABLE IF NOT EXISTS visitantes (
     UNIQUE (apartamento, nome, data)
 );
 
+-- Apartamento de cada sessão do ADK, fixado na criação (POST /sessoes).
+CREATE TABLE IF NOT EXISTS sessoes (
+    session_id  TEXT PRIMARY KEY,
+    apartamento TEXT NOT NULL REFERENCES apartamentos(numero),
+    criada_em   TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Contador dos códigos de reserva, incrementado na mesma transação do INSERT.
 CREATE TABLE IF NOT EXISTS sequencias (
     nome  TEXT PRIMARY KEY,
