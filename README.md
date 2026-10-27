@@ -148,7 +148,7 @@ Um único SQLite (`var/aurora.db`) guarda as sessões e os eventos do `DatabaseS
 **Onde:**
 - [`banco.py`](src/aurora/banco.py): `CREATE UNIQUE INDEX IF NOT EXISTS ux_reservas_ativa_area_data` com `ON reservas (area, data) WHERE status = 'ativa'`.
 - [`repositorio.py`](src/aurora/repositorio.py), `criar_reserva`:
-  - INSERT em `BEGIN IMMEDIATE`, junto com `UPDATE sequencias ... RETURNING valor`, que gera o código;
+  - INSERT em `BEGIN IMMEDIATE`, junto com `UPDATE sequencias SET valor = valor + 1 WHERE nome = 'reserva' RETURNING valor`, que gera o código;
   - `except sqlite3.IntegrityError` → `raise DataOcupada`, devolvido pela tool como resposta normal.
 
 **Por que não depende do modelo:**
