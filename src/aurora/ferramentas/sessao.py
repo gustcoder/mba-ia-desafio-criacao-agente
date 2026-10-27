@@ -9,8 +9,12 @@ from aurora.repositorio import ErroDeDominio
 CHAVE_APARTAMENTO = "apartamento"
 
 
-class SessaoSemApartamento(RuntimeError):
-    """A sessão não foi criada pela API (POST /sessoes) e não tem apartamento."""
+class SessaoSemApartamento(ErroDeDominio):
+    """A sessão não foi criada pela API (POST /sessoes) e não tem apartamento.
+
+    Acontece, por exemplo, numa sessão nova aberta direto no `adk web`: as tools
+    recusam a operação em vez de escolher um apartamento.
+    """
 
 
 def apartamento_da_sessao(tool_context: ToolContext) -> str:
@@ -22,7 +26,9 @@ def apartamento_da_sessao(tool_context: ToolContext) -> str:
     apartamento = tool_context.state.get(CHAVE_APARTAMENTO)
     # A sessão é criada com user_id = apartamento; as duas origens precisam bater.
     if not apartamento or apartamento != tool_context.user_id:
-        raise SessaoSemApartamento("Sessão sem apartamento válido; crie a sessão por POST /sessoes.")
+        raise SessaoSemApartamento(
+            "Esta sessão não tem apartamento: crie a sessão pela API (POST /sessoes)."
+        )
     return str(apartamento)
 
 

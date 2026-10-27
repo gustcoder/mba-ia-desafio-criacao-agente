@@ -28,7 +28,11 @@ Entrega do desafio "Regra é regra: o assistente virtual do Residencial Aurora" 
 - `uv run aurora-restore` (`src/aurora/restore.py`): apaga o banco (sessões e dados) e recarrega reservas e visitantes de `dados/` (ADR-005). Rode com a API parada.
 - `uv run aurora-api` (`src/aurora/api.py`): sobe o uvicorn em `localhost:8000`. O startup chama `banco.inicializar()`, que cria o schema e só semeia um banco nunca semeado.
 - Cota: o free tier do AI Studio (20 req/dia e 5 req/min no `gemini-2.5-flash`) não comporta o fluxo do avaliador, que faz cerca de 50 chamadas. O modelo usa `retry_options` com backoff no 429, e quando as tentativas se esgotam a API responde `503`.
-- `uv run adk web`: útil para inspecionar transferências, tool calls e confirmações durante o desenvolvimento.
+- Ferramentas de teste **só locais**, fora do Git via `.git/info/exclude` e fora da entrega: a spec não as pede e coloca testes fora de escopo. Não as versione.
+  - `src/aurora/agent.py`: reexporta o `app` para o `adk web`. Comando: `uv run adk web src --port 8001 --session_service_uri "sqlite+aiosqlite:///var/aurora.db"` (mesmo banco da API).
+  - Crie as sessões pela API e abra no `adk web` com `?app=aurora&userId=<apto>&session=<id>`. Uma sessão criada no `adk web` não tem apartamento, e as tools a recusam.
+  - `docs/TESTE-MANUAL.md`: roteiro de teste manual por garantia.
+  - `scripts/fluxo_avaliador.py parte1|parte2`: os passos 1 a 14 automatizados. Reinicie a API entre as duas partes.
 
 ### Variáveis de ambiente (`.env.example`)
 

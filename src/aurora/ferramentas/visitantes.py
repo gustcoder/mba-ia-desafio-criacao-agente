@@ -12,7 +12,10 @@ from aurora.repositorio import ErroDeDominio
 
 async def listar_meus_visitantes(tool_context: ToolContext) -> dict[str, Any]:
     """Lista os visitantes autorizados do apartamento do morador desta conversa."""
-    visitantes = await repo.listar_visitantes(apartamento_da_sessao(tool_context))
+    try:
+        visitantes = await repo.listar_visitantes(apartamento_da_sessao(tool_context))
+    except ErroDeDominio as e:
+        return erro(e)
     return {"visitantes": [asdict(v) for v in visitantes]}
 
 
