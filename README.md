@@ -1,3 +1,9 @@
+# 🚀 Desafio MBA Engenharia de Software com IA - Full Cycle
+
+![Status](https://img.shields.io/badge/Status-Em_Andamento-orange?style=for-the-badge&logo=github)
+![IA](https://img.shields.io/badge/Focus-AI%20Engineering-blueviolet?style=for-the-badge&logo=openai)
+![FullCycle](https://img.shields.io/badge/School-FullCycle-yellow?style=for-the-badge)
+
 # Residencial Aurora: assistente virtual com Google ADK
 
 Este é o assistente do aplicativo dos moradores do Residencial Aurora. Pelo chat, o morador reserva e cancela áreas comuns, autoriza visitantes e tira dúvidas sobre o regulamento. Ele é exposto por uma API FastAPI em `http://localhost:8000`.
