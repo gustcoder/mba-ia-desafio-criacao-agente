@@ -6,7 +6,7 @@ Orientação para o Claude Code neste repositório.
 
 Entrega do desafio "Regra é regra: o assistente virtual do Residencial Aurora" (MBA Full Cycle). Assistente com **Google ADK** exposto por uma **API FastAPI** em `http://localhost:8000`, que garante as regras do condomínio **no código**, não no prompt.
 
-- **Spec governante:** `context/intent/desafio-residencial-aurora.md` (cópia formatada do enunciado). O `README.md` atual é o enunciado original e **será substituído** pelo README da entrega (seções **Arquitetura**, **Garantias**, **Como rodar**).
+- **Spec governante:** `context/intent/desafio-residencial-aurora.md` (cópia formatada do enunciado). O `README.md` é o da entrega (seções **Arquitetura**, **Garantias** e **Como rodar**). A seção Garantias cita funções e trechos literais do código: se renomear ou reescrever um deles, atualize o README junto.
 - **Decisões:** `context/decisions/ADR-NNN-*.md` (ADR-001 a ADR-005). Leia antes de mudar toolchain, storage, topologia, modelo ou restauração.
 - `context/` está no `.gitignore` (material de trabalho local, não vai para o fork).
 
@@ -26,7 +26,8 @@ Entrega do desafio "Regra é regra: o assistente virtual do Residencial Aurora" 
 - uv (`~/.local/bin/uv`) + Python 3.12 (`.python-version`). Dependências em `pyproject.toml`, `uv.lock` versionado.
 - `uv sync`: instala.
 - `uv run aurora-restore` (`src/aurora/restore.py`): apaga o banco (sessões e dados) e recarrega reservas e visitantes de `dados/` (ADR-005). Rode com a API parada.
-- `uv run aurora-api` (planejado): sobe o uvicorn em `localhost:8000`. O startup chama `banco.inicializar()`, que cria o schema e só semeia um banco nunca semeado.
+- `uv run aurora-api` (`src/aurora/api.py`): sobe o uvicorn em `localhost:8000`. O startup chama `banco.inicializar()`, que cria o schema e só semeia um banco nunca semeado.
+- Cota: o free tier do AI Studio (20 req/dia e 5 req/min no `gemini-2.5-flash`) não comporta o fluxo do avaliador, que faz cerca de 50 chamadas. O modelo usa `retry_options` com backoff no 429, e quando as tentativas se esgotam a API responde `503`.
 - `uv run adk web`: útil para inspecionar transferências, tool calls e confirmações durante o desenvolvimento.
 
 ### Variáveis de ambiente (`.env.example`)
@@ -62,7 +63,21 @@ Trate variável vazia como ausente (`os.getenv(X) or padrão`).
 | `visitantes` | `sub_agent` (transferência) | Listar e autorizar visitantes do apto da sessão. Autorizar sempre exige confirmação. |
 | `regulamento` | `AgentTool` do principal | Consulta capítulos do `regulamento.md`. Roda em sessão interna em memória, e só a resposta final entra nos eventos. |
 
-**Modelo (ADR-004):** `gemini-2.5-flash` por padrão, via `AURORA_MODEL`.
+**Modelo (ADR-004):** `gemini-2.5-flash` por padrão, via `AURORA_MODEL`, numa instância `Gemini` compartilhada com retry.
+
+**Módulos:**
+
+| Arquivo | Conteúdo |
+|---|---|
+| `src/aurora/agentes.py` | Agentes, instruções e `App` (sem `resumability_config`, ver ADR-006). |
+| `src/aurora/ferramentas/sessao.py` | `apartamento_da_sessao` (state + `user_id`) e `aprovado_pelo_morador`. |
+| `src/aurora/ferramentas/reservas.py` | Tools de reserva. `reservar_area` usa `FunctionTool(require_confirmation=_reserva_gera_cobranca)`. |
+| `src/aurora/ferramentas/visitantes.py` | Tools de visitantes. `autorizar_visitante` sempre pede confirmação quando é válida. |
+| `src/aurora/ferramentas/regulamento.py` | Recorte por capítulo, índice só com títulos e `ler_capitulo`. |
+| `src/aurora/assistente.py` | Runner, sessões (tabela `sessoes` liga `session_id` → apartamento/`user_id`), `confirmacoes_pendentes`, `responder_confirmacao` (409), trava por sessão e `_conferir_retomada`. |
+| `src/aurora/api.py` / `esquemas.py` | Rotas FastAPI e modelos Pydantic do contrato. |
+
+**Retomada da confirmação (ADR-006):** os especialistas **precisam** manter `disallow_transfer_to_parent=False`. Assim o Runner retoma no autor do pedido de confirmação. O ADK reexecutaria a tool se a mesma resposta fosse reenviada, e é o `409` da API que impede isso.
 
 ## As cinco garantias: onde morar e armadilhas
 

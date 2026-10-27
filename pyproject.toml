@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 aurora-restore = "aurora.restore:main"
+aurora-api = "aurora.api:main"
 
 [build-system]
 requires = ["hatchling"]
