@@ -6,7 +6,7 @@ Orientação para o Claude Code neste repositório.
 
 Entrega do desafio "Regra é regra: o assistente virtual do Residencial Aurora" (MBA Full Cycle). Assistente com **Google ADK** exposto por uma **API FastAPI** em `http://localhost:8000`, que garante as regras do condomínio **no código**, não no prompt.
 
-- **Spec governante:** `context/intent/desafio-residencial-aurora.md` (cópia formatada do enunciado). O `README.md` atual é o enunciado original e **será substituído** pelo README da entrega (seções **Arquitetura**, **Garantias**, **Como rodar**).
+- **Spec governante:** `context/intent/desafio-residencial-aurora.md` (cópia formatada do enunciado). O `README.md` é o da entrega (seções **Arquitetura**, **Garantias** e **Como rodar**). A seção Garantias cita funções e trechos literais do código: se renomear ou reescrever um deles, atualize o README junto.
 - **Decisões:** `context/decisions/ADR-NNN-*.md` (ADR-001 a ADR-005). Leia antes de mudar toolchain, storage, topologia, modelo ou restauração.
 - `context/` está no `.gitignore` (material de trabalho local, não vai para o fork).
 
