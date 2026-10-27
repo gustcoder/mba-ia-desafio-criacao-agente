@@ -66,6 +66,17 @@ Um único SQLite (`var/aurora.db`) guarda as sessões e os eventos do `DatabaseS
 3. `POST /sessoes/{id}/confirmacoes` aceita só um `id` pendente na sessão e envia ao Runner `FunctionResponse(name="adk_request_confirmation", response={"confirmed": ...})`.
 4. O Runner retoma no autor do último evento (`reservas`), e o ADK reexecuta `reservar_area` com `tool_context.tool_confirmation`.
 
+### Decisões de projeto
+
+| Decisão | Escolha | Por quê | Alternativas descartadas |
+|---|---|---|---|
+| Toolchain | Python 3.12 + uv, `google-adk==2.2.0` e `sqlalchemy[asyncio]` declarado direto. | Paridade com o curso. O `[asyncio]` traz o `greenlet`, sem o qual o `DatabaseSessionService` falha em silêncio no SQLAlchemy 2.1. | ADK 2.9.1 ou 2.13.0; Python 3.14; extra `google-adk[db]`, que também puxa o Spanner. |
+| Armazenamento | Um único SQLite para as sessões do ADK e o domínio. Índice único parcial, cancelamento lógico e códigos por contador transacional. | Nenhum serviço externo para subir, e a exclusividade vale no INSERT (Garantia 5). | Dois arquivos SQLite; PostgreSQL em container. |
+| Topologia | Híbrida: `reservas` e `visitantes` como `sub_agents`, `regulamento` como `AgentTool`. | A confirmação volta ao agente que a pediu, e o texto do regulamento fica fora da sessão persistida. | Tudo por transferência, que deixaria o capítulo nos eventos; tudo por `AgentTool`, com confirmação dentro de sessão em memória. |
+| Retomada da confirmação | Especialistas transferíveis (`disallow_transfer_to_parent=False`), `App` sem `resumability_config` e `409` para id não pendente. | O Runner retoma no autor do pedido. Bloquear a transferência faria a resposta cair no principal, que não tem a tool, e a ação sumiria sem erro. O ADK reexecutaria a tool num reenvio, e por isso o `409` fica na API. | `disallow_transfer_to_parent=True`; `ResumabilityConfig`. |
+| Modelo | `gemini-2.5-flash` em todos os agentes (`AURORA_MODEL`), com retry e espera exponencial no `429`. | Bom equilíbrio entre tool calling e custo. Nenhuma garantia depende do modelo. | `gemini-2.5-flash-lite`, menos preciso nas transferências; `gemini-2.5-pro`, com cota menor. |
+| Restauração | `aurora-restore` apaga o banco inteiro, inclusive as sessões. | Estado limpo e previsível para o avaliador. Subir a API nunca restaura nada. | Restaurar só os dados; flag opcional. |
+
 ---
 
 ## Garantias
@@ -176,11 +187,18 @@ cp .env.example .env
 uv sync                 # instala as dependências (google-adk==2.2.0 fixado)
 uv run aurora-restore   # restaura os dados iniciais (com a API parada)
 uv run aurora-api       # sobe a API em http://localhost:8000
+
+# opcional, em outro terminal: ADK Dev UI sobre o mesmo banco da API (http://localhost:8001/dev-ui/)
+uv run adk web src --port 8001 --session_service_uri "sqlite+aiosqlite:///var/aurora.db"
 ```
 
-- `aurora-restore` apaga o banco inteiro, **inclusive as sessões**, e recarrega reservas e visitantes de `dados/`.
+- `aurora-restore` apaga o banco inteiro, **inclusive as sessões**, e recarrega reservas e visitantes de `dados/`. Pare a API e o `adk web` antes de rodar.
 - `aurora-api` pode ser parado com Ctrl+C e subido de novo: sessões e dados continuam.
 - A documentação interativa fica em `http://localhost:8000/docs`.
+- Com o `adk web` (opcional), dá para ver transferências, chamadas de tool e pedidos de confirmação:
+  - crie a sessão pela API (`POST /sessoes`) e abra `http://localhost:8001/dev-ui/?app=aurora&userId=<apartamento>&session=<session_id>`;
+  - o `userId` é o número do apartamento;
+  - uma sessão criada direto no `adk web` não tem apartamento, e as tools recusam qualquer operação (Garantia 2).
 
 ### Exemplo rápido
 
