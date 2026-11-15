@@ -1,6 +1,6 @@
 # 🚀 Desafio MBA Engenharia de Software com IA - Full Cycle
 
-![Status](https://img.shields.io/badge/Status-Em_Andamento-orange?style=for-the-badge&logo=github)
+![Status](https://img.shields.io/badge/Status-Concluido-green?style=for-the-badge&logo=github)
 ![IA](https://img.shields.io/badge/Focus-AI%20Engineering-blueviolet?style=for-the-badge&logo=openai)
 ![FullCycle](https://img.shields.io/badge/School-FullCycle-yellow?style=for-the-badge)
 
